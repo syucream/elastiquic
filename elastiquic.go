@@ -12,6 +12,9 @@ import (
 
 const (
   DEFINITIONS_FILE = "definitions.json"
+
+  // error message templates
+  STATUS_CODE_ERRMSG = "StatusCode: Expected is %d , but actual is %d.\n"
 )
 
 type Definitions struct {
@@ -24,7 +27,13 @@ type Scenario struct {
 }
 
 type Expects struct {
-  Statuscode int
+  StatusCode int
+}
+
+type TestResult struct {
+  Successed bool
+  Url string
+  ErrorMessage string
 }
 
 // Load json
@@ -47,10 +56,30 @@ func request(client *http.Client, scenario Scenario, ch chan int) {
   resp, err := client.Get(scenario.Url)
 
   // For debug
-  fmt.Println(resp)
-  fmt.Println(err)
+  // fmt.Println(resp)
+  // fmt.Println(err)
 
-  ch <- 1
+  if err != nil {
+    ch <- 0
+  } else {
+    spec(scenario, resp)
+    ch <- 1
+  }
+}
+
+func spec(scenario Scenario, resp *http.Response) TestResult {
+  r := TestResult{true, scenario.Url, ""}
+  expects := scenario.Expects
+
+  if expects.StatusCode != 0 {
+    successed := expects.StatusCode == resp.StatusCode
+    if !successed {
+      r.ErrorMessage = fmt.Sprintf(STATUS_CODE_ERRMSG, expects.StatusCode, resp.StatusCode)
+      return r
+    }
+  }
+
+  return r
 }
 
 func main() {
