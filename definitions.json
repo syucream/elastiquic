@@ -1,0 +1,10 @@
+{
+  "scenarios": [
+    {
+      "url": "https://www.google.co.jp/",
+      "expects": {
+        "statuscode": 200
+      }
+    }
+  ]
+}
