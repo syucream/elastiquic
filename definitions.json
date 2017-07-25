@@ -5,6 +5,12 @@
       "expects": {
         "statuscode": 200
       }
+    },
+    {
+      "url": "https://ssl.gstatic.com/",
+      "expects": {
+        "statuscode": 404
+      }
     }
   ]
 }

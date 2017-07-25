@@ -52,28 +52,30 @@ func load() Definitions {
 }
 
 // Do QUIC request
-func request(client *http.Client, scenario Scenario, ch chan int) {
+func request(client *http.Client, scenario Scenario, ch chan TestResult) {
   resp, err := client.Get(scenario.Url)
 
   // For debug
   // fmt.Println(resp)
   // fmt.Println(err)
 
-  if err != nil {
-    ch <- 0
-  } else {
-    spec(scenario, resp)
-    ch <- 1
-  }
+  ch <- spec(scenario, resp, err)
 }
 
-func spec(scenario Scenario, resp *http.Response) TestResult {
+// Check QUIC response
+func spec(scenario Scenario, resp *http.Response, err error) TestResult {
   r := TestResult{true, scenario.Url, ""}
   expects := scenario.Expects
 
+  if err != nil {
+    r.Successed = false
+    r.ErrorMessage = err.Error()
+    return r
+  }
+
   if expects.StatusCode != 0 {
-    successed := expects.StatusCode == resp.StatusCode
-    if !successed {
+    if expects.StatusCode != resp.StatusCode {
+      r.Successed = false
       r.ErrorMessage = fmt.Sprintf(STATUS_CODE_ERRMSG, expects.StatusCode, resp.StatusCode)
       return r
     }
@@ -89,7 +91,15 @@ func main() {
     Transport: goquic.NewRoundTripper(false),
   }
 
-  ch := make(chan int)
-  go request(client, defs.Scenarios[0], ch)
-  <- ch
+  ch := make(chan TestResult)
+  for _, scenario := range defs.Scenarios {
+    go request(client, scenario, ch)
+  }
+
+  for range defs.Scenarios {
+    result := <- ch
+    if !result.Successed {
+      fmt.Println(result.ErrorMessage)
+    }
+  }
 }
