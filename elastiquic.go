@@ -36,6 +36,11 @@ type TestResult struct {
 	ErrorMessage string
 }
 
+type Stats struct {
+	Successed int
+	Failed    int
+}
+
 // Load json
 func load() (Definitions, error) {
 	file, err := ioutil.ReadFile(DEFINITIONS_FILE)
@@ -86,15 +91,25 @@ func main() {
 		Transport: goquic.NewRoundTripper(false),
 	}
 
+	// TODO Controll concurrency
 	ch := make(chan TestResult)
 	for _, scenario := range defs.Scenarios {
 		go request(client, scenario, ch)
 	}
 
+	stats := Stats{0, 0}
 	for range defs.Scenarios {
 		result := <-ch
-		if !result.Successed {
-			fmt.Println(result.ErrorMessage)
+
+		if result.Successed {
+			stats.Successed += 1
+			fmt.Print(".")
+		} else {
+			stats.Failed += 1
+			fmt.Printf("X%s is failed because %s\n", result.Url, result.ErrorMessage)
 		}
 	}
+
+	total := stats.Successed + stats.Failed
+	fmt.Printf("\n\nTotal requests: %d, successed: %d, failed: %d\n", total, stats.Successed, stats.Failed)
 }
