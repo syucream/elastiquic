@@ -37,18 +37,16 @@ type TestResult struct {
 }
 
 // Load json
-func load() Definitions {
+func load() (Definitions, error) {
 	file, err := ioutil.ReadFile(DEFINITIONS_FILE)
 	if err != nil {
-		fmt.Println(err)
-		// FIXME
-		os.Exit(1)
+		return Definitions{}, err
 	}
 
 	var defs Definitions
 	json.Unmarshal(file, &defs)
 
-	return defs
+	return defs, nil
 }
 
 // Do QUIC request
@@ -78,7 +76,11 @@ func spec(scenario Scenario, resp *http.Response, err error) TestResult {
 }
 
 func main() {
-	defs := load()
+	defs, err := load()
+	if err != nil {
+		fmt.Println("elastiquic can't load a JSON file.")
+		os.Exit(1)
+	}
 
 	client := &http.Client{
 		Transport: goquic.NewRoundTripper(false),
