@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"sync"
 
 	"github.com/devsisters/goquic"
 )
@@ -56,57 +57,37 @@ func load() (Definitions, error) {
 }
 
 // Do QUIC request
-func request(client *http.Client, scenario Scenario, ch chan TestResult) {
+func request(client *http.Client, scenario Scenario, result *TestResult, done *sync.WaitGroup) {
 	resp, err := client.Get(scenario.Url)
-	ch <- spec(scenario, resp, err)
+	spec(scenario, resp, err, result)
+	done.Done()
 }
 
 // Check QUIC response
-func spec(scenario Scenario, resp *http.Response, err error) TestResult {
-	r := TestResult{true, scenario.Url, ""}
+func spec(scenario Scenario, resp *http.Response, err error, result *TestResult) {
 	expects := scenario.Expects
 
+	result.Successed = true
+	result.Url = scenario.Url
+	result.ErrorMessage = ""
+
 	if err != nil {
-		r.Successed = false
-		r.ErrorMessage = err.Error()
-		return r
+		result.Successed = false
+		result.ErrorMessage = err.Error()
+		return
 	}
 
 	if expects.StatusCode != 0 && expects.StatusCode != resp.StatusCode {
-		r.Successed = false
-		r.ErrorMessage = fmt.Sprintf(STATUS_CODE_ERRMSG, expects.StatusCode, resp.StatusCode)
-		return r
+		result.Successed = false
+		result.ErrorMessage = fmt.Sprintf(STATUS_CODE_ERRMSG, expects.StatusCode, resp.StatusCode)
+		return
 	}
-
-	return r
 }
 
-func main() {
-	defs, err := load()
-	if err != nil {
-		fmt.Println("elastiquic can't load a JSON file.")
-		os.Exit(1)
-	}
-
-	client := &http.Client{
-		Transport: goquic.NewRoundTripper(false),
-	}
-
-	// Set concurrency
-	procs := os.Getenv("GOMAXPROCS")
-	if procs == "" {
-		runtime.GOMAXPROCS(runtime.NumCPU())
-	}
-
-	ch := make(chan TestResult)
-	for _, scenario := range defs.Scenarios {
-		go request(client, scenario, ch)
-	}
-
+func printResults(results []TestResult) {
 	stats := Stats{0, 0}
-	for range defs.Scenarios {
-		result := <-ch
 
+	for _, result := range results {
 		if result.Successed {
 			stats.Successed += 1
 			fmt.Print(".")
@@ -118,4 +99,35 @@ func main() {
 
 	total := stats.Successed + stats.Failed
 	fmt.Printf("\n\nTotal requests: %d, successed: %d, failed: %d\n", total, stats.Successed, stats.Failed)
+}
+
+func main() {
+	defs, err := load()
+	if err != nil {
+		fmt.Println("elastiquic can't load a JSON file.")
+		os.Exit(1)
+	}
+
+	// Set concurrency
+	procs := os.Getenv("GOMAXPROCS")
+	if procs == "" {
+		runtime.GOMAXPROCS(runtime.NumCPU())
+	}
+
+	client := &http.Client{
+		Transport: goquic.NewRoundTripper(false),
+	}
+
+	num := len(defs.Scenarios)
+	var done sync.WaitGroup
+	done.Add(num)
+
+	// Do requests
+	results := make([]TestResult, num)
+	for i, scenario := range defs.Scenarios {
+		go request(client, scenario, &results[i], &done)
+	}
+	done.Wait()
+
+	printResults(results)
 }
