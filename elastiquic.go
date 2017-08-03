@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"runtime"
 
 	"github.com/devsisters/goquic"
 )
@@ -91,7 +92,12 @@ func main() {
 		Transport: goquic.NewRoundTripper(false),
 	}
 
-	// TODO Controll concurrency
+	// Set concurrency
+	procs := os.Getenv("GOMAXPROCS")
+	if procs == "" {
+		runtime.GOMAXPROCS(runtime.NumCPU())
+	}
+
 	ch := make(chan TestResult)
 	for _, scenario := range defs.Scenarios {
 		go request(client, scenario, ch)
