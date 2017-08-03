@@ -16,7 +16,7 @@ const (
 	DEFINITIONS_FILE = "definitions.json"
 
 	// error message templates
-	STATUS_CODE_ERRMSG = "StatusCode: Expected is %d , but actual is %d.\n"
+	STATUS_CODE_ERRMSG    = "StatusCode: Expected is %d , but actual is %d.\n"
 )
 
 type Definitions struct {
@@ -25,11 +25,7 @@ type Definitions struct {
 
 type Scenario struct {
 	Url     string
-	Expects Expects
-}
-
-type Expects struct {
-	StatusCode int
+	Expects map[string]interface{}
 }
 
 type TestResult struct {
@@ -77,10 +73,12 @@ func spec(scenario Scenario, resp *http.Response, err error, result *TestResult)
 		return
 	}
 
-	if expects.StatusCode != 0 && expects.StatusCode != resp.StatusCode {
-		result.Successed = false
-		result.ErrorMessage = fmt.Sprintf(STATUS_CODE_ERRMSG, expects.StatusCode, resp.StatusCode)
-		return
+	if expectedStatusCode, ok := expects["statuscode"].(int); ok {
+		if resp.StatusCode != expectedStatusCode {
+			result.Successed = false
+			result.ErrorMessage = fmt.Sprintf(STATUS_CODE_ERRMSG, expectedStatusCode, resp.StatusCode)
+			return
+		}
 	}
 }
 
