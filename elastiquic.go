@@ -16,7 +16,7 @@ const (
 	DEFINITIONS_FILE = "definitions.json"
 
 	// error message templates
-	STATUS_CODE_ERRMSG    = "StatusCode: Expected is %d , but actual is %d.\n"
+	STATUS_CODE_ERRMSG = "StatusCode: Expected is %d , but actual is %d.\n"
 )
 
 type Definitions struct {
@@ -73,7 +73,8 @@ func spec(scenario Scenario, resp *http.Response, err error, result *TestResult)
 		return
 	}
 
-	if expectedStatusCode, ok := expects["statuscode"].(int); ok {
+	if val, ok := expects["statuscode"].(float64); ok {
+		expectedStatusCode := int(val)
 		if resp.StatusCode != expectedStatusCode {
 			result.Successed = false
 			result.ErrorMessage = fmt.Sprintf(STATUS_CODE_ERRMSG, expectedStatusCode, resp.StatusCode)
