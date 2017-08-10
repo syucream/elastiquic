@@ -1,0 +1,8 @@
+language: go
+go:
+  - 1.7.x
+install:
+  - go get -u -d github.com/devsisters/goquic
+  - cd $GOPATH/src/github.com/devsisters/goquic/ && ./build_libs.sh
+script:
+  - go build elastiquic.go
