@@ -4,9 +4,23 @@
     {
       "url": "https://www.google.co.jp/",
       "expects": {
-        "statuscode": 200
+        "statuscode": 200,
+        "headers_eq": {
+          "cache-control": "private, max-age=0"
+        }
       }
     },
+
+    {
+      "url": "https://ssl.gstatic.com/gb/images/i1_1967ca6a.png",
+      "expects": {
+        "statuscode": 200,
+        "headers_eq": {
+          "content-type": "image/png"
+        }
+      }
+    },
+
     {
       "url": "https://ssl.gstatic.com/",
       "expects": {

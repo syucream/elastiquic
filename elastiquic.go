@@ -17,6 +17,7 @@ const (
 
 	// error message templates
 	STATUS_CODE_ERRMSG = "StatusCode: Expected is %d , but actual is %d.\n"
+	HEADERS_EQ_ERRMSG  = "Header: Expected %s header value is %s, but actual is %s.\n"
 )
 
 type Definitions struct {
@@ -80,6 +81,18 @@ func spec(scenario Scenario, resp *http.Response, err error, result *TestResult)
 			result.Successed = false
 			result.ErrorMessage = fmt.Sprintf(STATUS_CODE_ERRMSG, expectedStatusCode, resp.StatusCode)
 			return
+		}
+	}
+
+	if headers, ok := expects["headers_eq"].(map[string]interface{}); ok {
+		for key, value := range headers {
+			// NOTE Currently use a first element. Should is it joined?
+			actual := resp.Header[key][0]
+			if actual != value {
+				result.Successed = false
+				result.ErrorMessage = fmt.Sprintf(HEADERS_EQ_ERRMSG, key, value, actual)
+				return
+			}
 		}
 	}
 }
