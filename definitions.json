@@ -1,4 +1,5 @@
 {
+  "maxprocs": 32,
   "scenarios": [
     {
       "url": "https://www.google.co.jp/",

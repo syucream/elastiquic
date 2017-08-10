@@ -20,6 +20,7 @@ const (
 )
 
 type Definitions struct {
+	Maxprocs  int
 	Scenarios []Scenario
 }
 
@@ -108,9 +109,9 @@ func main() {
 	}
 
 	// Set concurrency
-	procs := os.Getenv("GOMAXPROCS")
-	if procs == "" {
-		runtime.GOMAXPROCS(runtime.NumCPU())
+	maxprocs := defs.Maxprocs
+	if os.Getenv("GOMAXPROCS") == "" && maxprocs > 0 {
+		runtime.GOMAXPROCS(maxprocs)
 	}
 
 	client := &http.Client{
