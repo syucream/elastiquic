@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 )
 
 const (
-	DEFINITIONS_FILE = "definitions.json"
+	DEFAULT_DEFINITIONS_FILE = "definitions.json"
 
 	// error message templates
 	STATUS_CODE_ERRMSG = "StatusCode: Expected is %d , but actual is %d.\n"
@@ -42,8 +43,8 @@ type Stats struct {
 }
 
 // Load json
-func load() (Definitions, error) {
-	file, err := ioutil.ReadFile(DEFINITIONS_FILE)
+func loadDefs(path string) (Definitions, error) {
+	file, err := ioutil.ReadFile(path)
 	if err != nil {
 		return Definitions{}, err
 	}
@@ -115,7 +116,9 @@ func printResults(results []TestResult) {
 }
 
 func main() {
-	defs, err := load()
+	defsPath := flag.String("c", DEFAULT_DEFINITIONS_FILE, "specify a definition file")
+
+	defs, err := loadDefs(*defsPath)
 	if err != nil {
 		fmt.Println("elastiquic can't load a JSON file.")
 		os.Exit(1)
