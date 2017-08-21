@@ -58,12 +58,12 @@ func loadDefs(path string) (Definitions, error) {
 // Do QUIC request
 func request(client *http.Client, scenario Scenario, result *TestResult, done *sync.WaitGroup) {
 	resp, err := client.Get(scenario.Url)
-	spec(scenario, resp, err, result)
+	scenario.test(resp, err, result)
 	done.Done()
 }
 
 // Check QUIC response
-func spec(scenario Scenario, resp *http.Response, err error, result *TestResult) {
+func (scenario Scenario) test(resp *http.Response, err error, result *TestResult) {
 	expects := scenario.Expects
 
 	result.Successed = true
