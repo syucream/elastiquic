@@ -117,6 +117,7 @@ func printResults(results []TestResult) {
 
 func main() {
 	defsPath := flag.String("c", DEFAULT_DEFINITIONS_FILE, "specify a definition file")
+	flag.Parse()
 
 	defs, err := loadDefs(*defsPath)
 	if err != nil {
